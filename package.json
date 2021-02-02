@@ -1,0 +1,38 @@
+{
+  "name": "tilecache-utility",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev_export": "nodemon index.js export --input=./testdata/jan_avgtemp/Map --output=test2.mbtiles",
+    "dev_serve": "nodemon index.js serve --input=F:/FSVBM_20200519_MTM_V1/FSVB_M --port=9999",
+    "generate-docs": "jsdoc -c docs-conf.json"
+  },
+  "keywords": [
+    "ESRI",
+    "TPKX",
+    "Tilecache"
+  ],
+  "author": "Tino Kastbjerg Stigsen",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^7.1.2",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "proj4": "^2.7.0",
+    "yargs": "^16.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "assets": [
+      "dist/**/*"
+    ],
+    "targets": [
+      "node14-win-x64"
+    ]
+  }
+}
