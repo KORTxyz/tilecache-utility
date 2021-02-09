@@ -4,14 +4,16 @@ const cors = require('cors');
 const app = express();
 
 const start = async (PORT) => {
-    process.env.BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`
-
+    console.log(process.argv.base_url, PORT)
+    process.env.BASE_URL = process.argv.base_url || `http://localhost:${PORT}`
+    
     app.use(cors());
+    app.use((err, req, res, next) => res.status(400).json({ "name": err.name, "code": err.code, "msg": err.message }))
 
-    const distPath = path.join(__dirname, '../../dist'); 
+    const distPath = path.join(__dirname, '../dist'); 
 
     app.use('/dist',express.static(distPath))
-
+    //app.use(function(req, res, next) {console.log(req.protocol + '://' + req.get('host') + req.originalUrl); next();});
 
     app.get('/', (req, res) => {
         res.header('Content-Type', 'text/html');
@@ -83,7 +85,6 @@ const start = async (PORT) => {
 
     app.use('/tiles', require('./tiles'));
     app.use('/WMTS', require('./wmts'));
-    app.use((err, req, res, next) => res.status(400).json({ "name": err.name, "code": err.code, "msg": err.message }))
 
     app.listen(PORT, () => {
         console.log(`Webserver running on port ${PORT}`)

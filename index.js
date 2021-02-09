@@ -62,6 +62,10 @@ yargs(hideBin(process.argv))
                     describe: 'port to bind on',
                     default: 5000
                 },
+                'base_url': {
+                    alias: 'b',
+                    describe: 'base url to connect to',
+                },
                 'verbose': {
                     alias: 'v',
                     type: 'boolean',

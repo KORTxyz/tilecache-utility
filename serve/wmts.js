@@ -1,4 +1,5 @@
 const express = require('express');
+const cacheV2 = require('../export/cacheV2');
 const router = express.Router();
 
 const mimetypes = {
@@ -9,21 +10,16 @@ const mimetypes = {
 
 const serviceIdentification = `
 <ows:ServiceIdentification>
-    <ows:Title>local</ows:Title>
-    <ows:Abstract>local</ows:Abstract>
-    <ows:Keywords>
-        <ows:Keyword>maps</ows:Keyword>
-    </ows:Keywords>
+    <ows:Title>tilecache-utility</ows:Title>
     <ows:ServiceType>OGC WMTS</ows:ServiceType>
     <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
-    <ows:AccessConstraints>Proper attribution is required for any usage.</ows:AccessConstraints>
 </ows:ServiceIdentification>
 `;
 
 const serviceProvider = `
 <ows:ServiceProvider>
     <ows:ProviderName>local</ows:ProviderName>
-    <ows:ProviderSite xlink:href="${global.baseUrl}"></ows:ProviderSite>
+    <ows:ProviderSite xlink:href="${process.env.BASE_URL}/WMTS?"></ows:ProviderSite>
 </ows:ServiceProvider>
 `;
 
@@ -32,7 +28,7 @@ const operationsMetadata = `
     <ows:Operation name="GetCapabilities">
         <ows:DCP>
             <ows:HTTP>
-                <ows:Get xlink:href="${global.baseUrl}">
+                <ows:Get xlink:href="${process.env.BASE_URL}/WMTS?">
                     <ows:Constraint name="GetEncoding">
                         <ows:AllowedValues>
                             <ows:Value>KVP</ows:Value>
@@ -45,7 +41,7 @@ const operationsMetadata = `
     <ows:Operation name="GetTile">
         <ows:DCP>
             <ows:HTTP>
-                <ows:Get xlink:href="${global.baseUrl}">
+                <ows:Get xlink:href="${process.env.BASE_URL}/WMTS?">
                     <ows:Constraint name="GetEncoding">
                         <ows:AllowedValues>
                             <ows:Value>KVP</ows:Value>
@@ -59,25 +55,24 @@ const operationsMetadata = `
 `;
 
 
-const layer = metadata => {
-    const bbox = metadata.bounds.split(",").map(e=>Number(e))
+const layer = () => {
+    //const bbox = metadata.bounds.split(",").map(e=>Number(e))
     return `
     <Layer>
-        <ows:Title>${metadata.name}</ows:Title>
-        <ows:Abstract>${metadata.description}</ows:Abstract>
-        <ows:Identifier>${metadata.name}</ows:Identifier>
-        <ows:WGS84BoundingBox>
-            <ows:LowerCorner>${bbox[0]} ${bbox[1]}</ows:LowerCorner>
-            <ows:UpperCorner>${bbox[2]} ${bbox[3]}</ows:UpperCorner>
+        <ows:Title>tilecache-utility</ows:Title>
+        <ows:Abstract>tilecache-utility</ows:Abstract>
+        <ows:Identifier>tilecache-utility</ows:Identifier>
+        <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+            <ows:LowerCorner>-180 -85</ows:LowerCorner>
+            <ows:UpperCorner>180 85</ows:UpperCorner>
         </ows:WGS84BoundingBox>
         <Style isDefault="true">
             <ows:Identifier>default</ows:Identifier>
         </Style>
-        <Format>${mimetypes[metadata.format]}</Format>
+        <Format>image/png</Format>
         <TileMatrixSetLink>
             <TileMatrixSet>GoogleMapsCompatible</TileMatrixSet>
         </TileMatrixSetLink>
-        <ResourceURL format="${mimetypes[metadata.format]}" resourceType="tile" template="http://${global.baseUrl}?layer=topo_skaermkort_daempet&tilematrixset=GoogleMapsCompatible&Service=WMTS&request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={tileMatrix}&TileCol={tileCol}&TileRow={tileRow}"/>
     </Layer>
     `;
 }; 
@@ -265,44 +260,48 @@ const tileMatrixSet = `
 </TileMatrixSet>
 `;
 
-const capabilities = metadata => {
+const capabilities = () => {
     return `
     <Capabilities xmlns="http://www.opengis.net/wmts/1.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml" xsi:schemaLocation="http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd" version="1.0.0">
         ${serviceIdentification}
         ${serviceProvider}
         ${operationsMetadata}
         <Contents>
-            ${layer(metadata)}
+            ${layer()}
             ${tileMatrixSet}
         </Contents>
+        <ServiceMetadataURL xlink:href="${process.env.BASE_URL}/WMTS?" />
     </Capabilities>
     `
 };
 
 
 const getCapabilities = async res => {
-    console.log("getCapabilities")
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/xml');
-    const metadata = await db.prepare('SELECT * FROM metadata').all().reduce((acc, cur) => {
-        acc[cur["name"]] = cur["value"]
-        return acc;
-    }, {});
-    
-    const capabilities = capabilities(metadata)
-    res.end(capabilities);
+    res.writeHead(200, {'Content-Type': 'text/xml'})
+    res.end(capabilities());
 }
 
-const getTile = res => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end("test");
+const getTile = async (req,res) => {
+    //http://localhost:9999/WMTS?TileCol=0&TileMatrix=1&TileMatrixSet=GoogleMapsCompatible&TileRow=1&format=image%2Fpng&layer=tilecache-utility&request=GetTile&service=WMTS&style=default&version=1.0.0
+    const {TileMatrix, TileCol, TileRow} = req.query;
+    const tile = await cacheV2.getTile(TileMatrix, TileCol, TileRow)
+    res.writeHead(200, {'Content-Type': 'image/png'})
+    res.end(tile)
 }
 
-const root = res => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end("test");
+const root = async (req, res, next) => {
+    try {
+        if(!req.query.request && !req.query.REQUEST) return next("no request parameter")
+        const request = req.query.request || req.query.REQUEST;
+        const type = request.toLowerCase();
+        if(type == "getcapabilities") await getCapabilities(res);
+        else if(type == "gettile") await getTile(req,res);
+        else return next("no valid request parameter")
+
+    }
+    catch (err){   
+        return next(err)
+    } 
 }
 
 
