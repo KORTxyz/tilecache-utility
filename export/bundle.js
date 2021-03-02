@@ -8,12 +8,12 @@ const TILE_INDEX_RECORD_SIZE = 8;
 const tileIndexOffset = (row, column) => TILE_INDEX_OFFSET + TILE_INDEX_RECORD_SIZE * (TILE_INDEX_ARRAY_SIZE * (row % TILE_INDEX_ARRAY_SIZE) + (column % TILE_INDEX_ARRAY_SIZE));
 
 const getOffset = bundleFileName => {
-    const bundleName = path.basename(bundleFileName, '.bundle')
+    const bundleName = path.basename(bundleFileName, '.bundle').substring(1).split("C") // R<rrrr>C<cccc> -> [<rrrr>,<cccc>]
 
-    const row = bundleName.substr(1, 4).toUpperCase()
+    const row = bundleName[0].toUpperCase()
     const rowOffset = parseInt(row, 16)
 
-    const col = bundleName.substr(6, 4).toUpperCase()
+    const col = bundleName[1].toUpperCase()
     const columnOffset = parseInt(col, 16)
 
     return {

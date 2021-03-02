@@ -1,6 +1,12 @@
 const proj4 = require('proj4');
 const fs = require('fs').promises;
 
+/**
+ * Retrieve value between tag from XML
+ * @param {string} xml - xml file
+ * @param {string} tag - xml tag
+ * @returns {string} - value between tag
+ */
 const getXMLValue = (xml, tag) => {
     const startTag = `<${tag}>`
     const endTag = `</${tag}>`

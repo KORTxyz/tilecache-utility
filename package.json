@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev_export": "nodemon index.js export --input=./testdata/jan_avgtemp/Map --output=test2.mbtiles",
     "dev_serve": "nodemon index.js serve --input=./testdata/jan_avgtemp/Map --port=9999",
-    "generate-docs": "jsdoc -c docs-conf.json"
+    "generate-docs": "jsdoc -c jsdoc.json"
   },
   "keywords": [
     "ESRI",

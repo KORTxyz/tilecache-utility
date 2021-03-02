@@ -4,7 +4,6 @@ const cors = require('cors');
 const app = express();
 
 const start = async (PORT) => {
-    console.log(process.argv.base_url, PORT)
     process.env.BASE_URL = process.argv.base_url || `http://localhost:${PORT}`
     
     app.use(cors());
